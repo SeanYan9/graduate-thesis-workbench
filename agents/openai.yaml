@@ -1,0 +1,5 @@
+interface:
+  display_name: "Graduate Thesis Workbench"
+  short_description: "Evidence-checked thesis and authorship-aware writing"
+  brand_color: "#2F6F8F"
+  default_prompt: "Use $graduate-thesis-workbench to revise a thesis chapter with verified citations, authorship-aware prose, traceable figures, and final document QA."
