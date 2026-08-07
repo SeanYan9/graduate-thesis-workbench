@@ -45,13 +45,18 @@ graduate-thesis-workbench/
 │   ├── evidence-and-citations.md     # 论断、来源与参考文献
 │   ├── figures-and-tables.md         # 可视化与表格产物
 │   ├── docx-workflow.md              # Word 文档操作
+│   ├── docx-template-style-inheritance.md # 读取并继承用户 Word 模板样式
 │   ├── quality-gates.md              # 终稿审计与 fail-closed 规则
 │   ├── chinese-thesis-style.md       # 中文学术写作风格默认值
 │   ├── academic-authorship-and-aigc.md # 作者身份、AI 痕迹审校、声音校准、披露边界
 │   └── source-distillation.md        # 蒸馏来源记录与选择规则
 ├── scripts/
 │   ├── init_thesis_project.py        # 初始化项目契约文件（不覆盖已有文件）
-│   └── validate_thesis_workspace.py  # fail-closed 工作区验证器（支持 --json）
+│   ├── validate_thesis_workspace.py  # fail-closed 工作区验证器（支持 --json）
+│   ├── docx_style_profile.py         # 只读提取 Word 模板样式与页面设置
+│   ├── template_writer.py            # 仅复用模板既有样式写入新内容
+│   ├── omml.py                       # 常见 LaTeX 公式转原生 Word OMML
+│   └── validate_docx_math.py         # OMML、残留 LaTeX 与重复文本检查
 ├── LICENSE                           # MIT
 └── README.md
 ```
@@ -61,6 +66,12 @@ graduate-thesis-workbench/
 ### 安装为 skill
 
 将本仓库放入你的 skill 目录（如 `~/.codex/skills/`、`.agents/skills/` 或对应平台的 skill 根目录），保留 `SKILL.md` 作为入口即可被识别。
+
+安装本工具脚本依赖：
+
+```powershell
+pip install -r requirements.txt
+```
 
 ### 初始化一个论文项目
 
@@ -84,6 +95,53 @@ python scripts/validate_thesis_workspace.py <project-root> --json
 
 它检查：契约文件、论断/证据链接、参考文献核验状态、正文引文对账、正文占位符、表格来源行、figure brief、数据清单、mock 数据泄漏、引用的图表产物是否存在。它**不替代**权威来源核验、统计审查、OOXML 校验与最终渲染页检查。
 
+### 读取模板并按原样写入
+
+当用户已经设置好论文模板时，先读取模板，不修改模板样式：
+
+```powershell
+python scripts/docx_style_profile.py "论文初稿.docx" `
+  --json "qa/template-style-profile.json" `
+  --markdown "qa/template-style-profile.md"
+```
+
+然后使用内容 JSON 指定锚点、段落和模板中的既有样式：
+
+```powershell
+python scripts/template_writer.py `
+  "论文初稿.docx" `
+  "chapter-content.json" `
+  --output "论文初稿_工作版.docx"
+```
+
+脚本会拒绝不存在的样式名，并保持输入文档的 `word/styles.xml`、页眉页脚、
+编号和页面设置不变。
+
+### 输入可编辑公式
+
+常见论文公式可以使用 LaTeX 输入，写入后保存为 Word 原生 OMML：
+
+```json
+{
+  "type": "paragraph",
+  "style": "正文",
+  "runs": [
+    {"text": "饱和度为 "},
+    {"latex": "X_p = \\frac{v_p}{c_p}"},
+    {"text": "。"}
+  ]
+}
+```
+
+写入后必须运行：
+
+```powershell
+python scripts/validate_docx_math.py "论文初稿_工作版.docx" --json
+python <DOCX工具>/scripts/office/validate.py "论文初稿_工作版.docx"
+```
+
+复杂 LaTeX 命令不支持时脚本会停止并报告，不会把公式降级为图片或斜体普通文本。
+
 ## 状态契约
 
 每次非平凡响应必须报告状态：`DONE`、`DONE_WITH_CONCERNS`、`NEEDS_EVIDENCE`、`NEEDS_DATA`、`NEEDS_FORMAT_CHECK` 或 `BLOCKED`，并附上改动文件、消费的证据、受影响的论断/图表、作者身份完整性记录与已运行的验证命令。
@@ -104,6 +162,9 @@ python scripts/validate_thesis_workspace.py <project-root> --json
 - [labarba/sciwrite](https://github.com/labarba/sciwrite) — 科学散文审计
 - [stephenturner/skill-deslop](https://github.com/stephenturner/skill-deslop) — 去除填充与虚夸语言
 - [blader/humanizer](https://github.com/blader/humanizer) — AI 写作模式目录与作者样本校准
+- [AllenWang2005/Word-typesetting](https://github.com/AllenWang2005/Word-typesetting) — Word 报告格式审计、LaTeX 转 OMML、公式替换与模板格式门控
+- [xuanfengyuju/word-equation-formula](https://github.com/xuanfengyuju/word-equation-formula) — 普通文本公式识别、上下标和希腊字母到 OMML 的离线转换思路
+- [nihole/md2docx](https://github.com/nihole/md2docx) — 以既有 Word 模板为排版权威，将外部内容插入目标文档的流程
 
 拒绝采纳以规避检测器为主要承诺、未经独立验证的降率主张，或建议伪造错误/随机噪声/欺骗性作者信号的工具。
 

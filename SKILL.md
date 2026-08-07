@@ -57,7 +57,7 @@ planning notes, and fail closed when evidence or provenance is missing.
 | Flowchart, architecture, mechanism, conceptual diagram | Figure brief route | figure brief, editable diagram source, rendered preview |
 | Reference list or cross-citation audit | Citation verification route | reference ledger, claim-support report, reconciliation report |
 | Authorship, AIGC-risk, or AI-pattern review | Academic authenticity route | author voice profile, detect-only audit, minimal revision report |
-| Word/DOCX modification | DOCX route | changed DOCX, OOXML validation, rendered inspection |
+| Word/DOCX modification | DOCX route | changed DOCX, template style profile, OMML registry, OOXML validation, rendered inspection |
 | Final thesis audit | Independent QA route | audit report, blockers, verification evidence |
 
 Load only the reference file needed for the selected route:
@@ -66,6 +66,8 @@ Load only the reference file needed for the selected route:
 - `references/evidence-and-citations.md` for claims, sources, and references.
 - `references/figures-and-tables.md` for visual and tabular artifacts.
 - `references/docx-workflow.md` for Word document operations.
+- `references/docx-template-style-inheritance.md` when a user provides a
+  formatted Word template or asks to preserve existing Word styles.
 - `references/quality-gates.md` for final audits and fail-closed rules.
 - `references/chinese-thesis-style.md` when editing the user's Chinese prose.
 - `references/academic-authorship-and-aigc.md` for authorship integrity,
@@ -124,6 +126,54 @@ Load only the reference file needed for the selected route:
      author review of substantive changes. Report signals and changes, never
      an alleged detector score.
    - Report exact commands and outputs before using completion language.
+
+## DOCX Template and Formula Route
+
+When the task asks to place rewritten content into an existing Word document,
+read the template's styles before writing. Use:
+
+```powershell
+python scripts/docx_style_profile.py <template.docx> `
+  --json <style-profile.json> `
+  --markdown <style-profile.md>
+```
+
+The profile is read-only. It records the style names, IDs, fonts, sizes,
+paragraph settings, page setup, and style usage. The template is the formatting
+authority; do not normalize or redesign the user's styles.
+
+For insertion, prepare a JSON block specification and run:
+
+```powershell
+python scripts/template_writer.py <template.docx> <content.json> `
+  --output <output.docx>
+```
+
+`template_writer.py` refuses unknown style names and writes only after an
+existing anchor paragraph. It preserves the template's `word/styles.xml`,
+page settings, headers, footers, numbering, and section structure. It supports
+plain paragraphs, headings, and inline/display formulas.
+
+For common thesis formulas, use the bundled native OMML converter:
+
+```powershell
+python scripts/omml.py 'X_p = \frac{v_p}{c_p}' --display
+```
+
+The writer embeds the resulting OMML at the formula's exact position. It does
+not leave visible LaTeX, append formulas to the paragraph tail, or replace a
+formula with manually italicized text. Unsupported LaTeX commands fail
+closed. After writing, run:
+
+```powershell
+python scripts/validate_docx_math.py <output.docx> --json
+python <DOCX工具>/scripts/office/validate.py <output.docx>
+```
+
+The formula converter is intended for common engineering-thesis notation.
+Complex custom LaTeX should use a verified Pandoc/Word conversion path or an
+explicit OMML source and must still pass the duplicate-text and rendering
+checks.
 
 ## Local Validation Commands
 

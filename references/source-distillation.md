@@ -20,6 +20,9 @@ The local implementation keeps its own contracts and attribution record.
 | https://github.com/labarba/sciwrite | Scientific prose audits for clarity, sentence architecture, terminology, numerical consistency, and citation integrity |
 | https://github.com/stephenturner/skill-deslop | Removal of filler, vague attribution, formulaic structure, and inflated scientific language |
 | https://github.com/blader/humanizer | Broad AI-writing pattern catalog and author-sample calibration, restricted here to academic-safe pattern review |
+| https://github.com/AllenWang2005/Word-typesetting | Word report formatting workflow, native OMML formula replacement, template-aware document checks, and fail-closed formatting audits |
+| https://github.com/xuanfengyuju/word-equation-formula | Offline tokenize-merge-build approach for converting plain-text subscripts, superscripts, Greek letters, and operators into editable OMML |
+| https://github.com/nihole/md2docx | Template-as-authority document generation: insert converted content into an existing Word template while preserving its styles and structural settings |
 
 ## Selection Rules
 
@@ -33,6 +36,9 @@ The local implementation keeps its own contracts and attribution record.
 - Reject tools whose primary promise is detector evasion, whose reported
   detection-rate reduction is not independently verified, or whose workflow
   recommends fabricated errors, random noise, or deceptive authorship signals.
+- Do not copy external repository code or branding into this toolkit. Distill
+  the workflow and reimplement only the smallest functions needed for the
+  thesis DOCX route. Preserve source attribution in this record.
 
 ## Local Integrations
 
@@ -47,6 +53,13 @@ The workbench can route to these already available local skills:
 - `research-paper-writing`
 - `writing-plans`
 - `humanizer`
+
+The DOCX route now also includes local implementations of:
+
+- read-only template style profiling;
+- style-validated content insertion after an explicit anchor;
+- common LaTeX to native OMML conversion;
+- residual-LaTeX, duplicate-text, and native-OMML validation.
 
 Use them only when their trigger and artifact contract match the task.
 

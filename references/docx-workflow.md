@@ -2,18 +2,24 @@
 
 Use `DOCX工具` for document operations. This workbench supplies routing and
 quality gates; it does not replace the DOCX tool's OOXML, equation, revision,
-comment, or rendering scripts.
+comment, or rendering scripts. When a user provides a formatted Word file,
+also read `docx-template-style-inheritance.md`.
 
 ## Safe Edit Sequence
 
 1. Preserve the original input file.
-2. Extract or inspect the document structure and styles.
-3. Apply a narrowly scoped edit to a copy under the project root.
-4. Validate OOXML relationships and content types.
-5. Render the output to PDF or page images.
-6. Inspect headings, page breaks, headers, footers, equations, captions,
+2. Run `scripts/docx_style_profile.py` against the input and preserve the
+   resulting style profile as an audit artifact.
+3. Apply a narrowly scoped edit to a copy under the project root using only
+   styles that already exist in the input document.
+4. Compare `word/styles.xml` before and after the content insertion.
+5. Validate native OMML with `scripts/validate_docx_math.py` when formulas or
+   quantity symbols are present.
+6. Validate OOXML relationships and content types.
+7. Render the output to PDF or page images.
+8. Inspect headings, page breaks, headers, footers, equations, captions,
    tables, fonts, hyperlinks, and figure placement.
-7. Report the output path and the validation evidence.
+9. Report the output path and the validation evidence.
 
 ## Thesis-Specific Checks
 
@@ -23,6 +29,10 @@ comment, or rendering scripts.
 - captions are attached to the correct object;
 - table notes keep `注:` and `数据来源:` on separate lines when required;
 - formulas remain native equations or preserve the source format;
+- formula conversion is in-place, with no visible LaTeX or duplicate plain
+  text remaining;
+- user-defined template styles remain unchanged and newly inserted content
+  uses existing style names;
 - Chinese punctuation, spaces, fonts, and mixed Chinese-English terms are
   consistent;
 - tracked changes and comments are intentionally retained or accepted;
