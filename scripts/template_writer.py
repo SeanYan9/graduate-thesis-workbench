@@ -87,9 +87,11 @@ def _numbered_math(latex: str, number: str | None, size: int) -> etree._Element:
     math = etree.Element(M("oMath"))
     eqarr = etree.Element(M("eqArr"))
 
-    # eqArr properties: no maxDist (forcing equals-sign alignment distorts
-    # formulas that contain several '=' such as "wi>=0, i=1,2,3"), Cambria Math size
+    # eqArr properties: keep maxDist (matches the user-verified native layout;
+    # formulas with a single '=' are unaffected).  Cambria Math at document size.
     eqarrpr = etree.SubElement(eqarr, M("eqArrPr"))
+    maxdist = etree.SubElement(eqarrpr, M("maxDist"))
+    maxdist.set(M("val"), "1")
     ctrlpr = etree.SubElement(eqarrpr, M("ctrlPr"))
     wrpr = etree.SubElement(ctrlpr, W("rPr"))
     _fonts_sz(wrpr, size)
