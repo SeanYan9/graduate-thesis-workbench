@@ -76,14 +76,12 @@ def _fonts_sz(rpr: etree._Element, size: int) -> None:
 
 
 def _numbered_math(latex: str, number: str | None, size: int) -> etree._Element:
-    """Build the native Word numbered-formula layout used when a user types
-    ``formula # (2-1) <Enter>`` inside the equation editor.
+    """Build the native Word/WPS numbered-formula layout (``formula # (2-1) <Enter>``).
 
-    Word stores that as a single ``<m:oMathPara><m:oMath><m:eqArr>`` where the
-    first ``<m:e>`` holds the formula, followed by a ``#`` run and the number
-    inside a delimiter ``<m:d>`` whose text is the bare number (no parentheses:
-    Word renders the parentheses itself).  The paragraph tab stops align the
-    formula centre and the number right.
+    Word stores this as ``<m:oMathPara><m:oMath><m:eqArr>`` whose single cell
+    ``<m:e>`` contains the formula, a literal ``#`` run, the number inside a
+    delimiter ``<m:d>`` (bare text -- the editor renders the parentheses) and a
+    trailing ``<m:ctrlPr>``.  Paragraph tab stops align formula centre / number right.
     """
     container = etree.Element(M("oMathPara"))
     math = etree.Element(M("oMath"))
@@ -97,20 +95,18 @@ def _numbered_math(latex: str, number: str | None, size: int) -> etree._Element:
     wrpr = etree.SubElement(ctrlpr, W("rPr"))
     _fonts_sz(wrpr, size)
 
-    # first cell: the formula
-    formula = latex_to_omml(latex, size=size)
+    # the single cell: formula + '#' + number delimiter + trailing ctrlPr
     e1 = etree.SubElement(eqarr, M("e"))
+    formula = latex_to_omml(latex, size=size)
     for child in list(formula):
         e1.append(child)
 
-    # the literal '#' separator Word inserts before the number
-    hash_run = etree.SubElement(eqarr, M("r"))
+    hash_run = etree.SubElement(e1, M("r"))
     hash_text = etree.SubElement(hash_run, M("t"))
     hash_text.text = "#"
 
     if number:
-        # number inside a delimiter; bare text (parentheses are rendered by Word)
-        num_d = etree.SubElement(eqarr, M("d"))
+        num_d = etree.SubElement(e1, M("d"))
         num_dpr = etree.SubElement(num_d, M("dPr"))
         num_ctrl = etree.SubElement(num_dpr, M("ctrlPr"))
         num_rpr = etree.SubElement(num_ctrl, W("rPr"))
@@ -121,8 +117,7 @@ def _numbered_math(latex: str, number: str | None, size: int) -> etree._Element:
         num_text = etree.SubElement(num_run, M("t"))
         num_text.text = number
 
-    # trailing ctrlPr as produced by Word
-    tail_ctrl = etree.SubElement(eqarr, M("ctrlPr"))
+    tail_ctrl = etree.SubElement(e1, M("ctrlPr"))
     tail_rpr = etree.SubElement(tail_ctrl, W("rPr"))
     _fonts_sz(tail_rpr, size)
 
