@@ -65,25 +65,69 @@ def _math_tab_run() -> etree._Element:
     return m_run
 
 
-def _numbered_math(latex: str, number: str | None, size: int) -> etree._Element:
-    """Build a native <m:oMathPara> containing formula and (2-x) number.
+def _fonts_sz(rpr: etree._Element, size: int) -> None:
+    rfonts = etree.SubElement(rpr, W("rFonts"))
+    rfonts.set(W("ascii"), "Cambria Math")
+    rfonts.set(W("hAnsi"), "Cambria Math")
+    sz = etree.SubElement(rpr, W("sz"))
+    sz.set(W("val"), str(size))
+    szcs = etree.SubElement(rpr, W("szCs"))
+    szcs.set(W("val"), str(size))
 
-    Word's in-editor flow is: formula # (2-1) <Enter>.  The equivalent OOXML is
-    a single oMathPara with two oMath children (formula, number), each preceded
-    by an internal tab so the paragraph tab stops align the formula centre and
-    the number right.
+
+def _numbered_math(latex: str, number: str | None, size: int) -> etree._Element:
+    """Build the native Word numbered-formula layout used when a user types
+    ``formula # (2-1) <Enter>`` inside the equation editor.
+
+    Word stores that as a single ``<m:oMathPara><m:oMath><m:eqArr>`` where the
+    first ``<m:e>`` holds the formula, followed by a ``#`` run and the number
+    inside a delimiter ``<m:d>`` whose text is the bare number (no parentheses:
+    Word renders the parentheses itself).  The paragraph tab stops align the
+    formula centre and the number right.
     """
     container = etree.Element(M("oMathPara"))
+    math = etree.Element(M("oMath"))
+    eqarr = etree.Element(M("eqArr"))
+
+    # eqArr properties: align at equals signs, Cambria Math at document size
+    eqarrpr = etree.SubElement(eqarr, M("eqArrPr"))
+    maxdist = etree.SubElement(eqarrpr, M("maxDist"))
+    maxdist.set(M("val"), "1")
+    ctrlpr = etree.SubElement(eqarrpr, M("ctrlPr"))
+    wrpr = etree.SubElement(ctrlpr, W("rPr"))
+    _fonts_sz(wrpr, size)
+
+    # first cell: the formula
     formula = latex_to_omml(latex, size=size)
-    formula.insert(0, _math_tab_run())
-    container.append(formula)
+    e1 = etree.SubElement(eqarr, M("e"))
+    for child in list(formula):
+        e1.append(child)
+
+    # the literal '#' separator Word inserts before the number
+    hash_run = etree.SubElement(eqarr, M("r"))
+    hash_text = etree.SubElement(hash_run, M("t"))
+    hash_text.text = "#"
+
     if number:
-        number_math = etree.Element(M("oMath"))
-        number_math.append(_math_tab_run())
-        m_run = etree.SubElement(number_math, M("r"))
-        m_text = etree.SubElement(m_run, M("t"))
-        m_text.text = number
-        container.append(number_math)
+        # number inside a delimiter; bare text (parentheses are rendered by Word)
+        num_d = etree.SubElement(eqarr, M("d"))
+        num_dpr = etree.SubElement(num_d, M("dPr"))
+        num_ctrl = etree.SubElement(num_dpr, M("ctrlPr"))
+        num_rpr = etree.SubElement(num_ctrl, W("rPr"))
+        _fonts_sz(num_rpr, size)
+        etree.SubElement(num_rpr, W("i"))
+        num_e = etree.SubElement(num_d, M("e"))
+        num_run = etree.SubElement(num_e, M("r"))
+        num_text = etree.SubElement(num_run, M("t"))
+        num_text.text = number
+
+    # trailing ctrlPr as produced by Word
+    tail_ctrl = etree.SubElement(eqarr, M("ctrlPr"))
+    tail_rpr = etree.SubElement(tail_ctrl, W("rPr"))
+    _fonts_sz(tail_rpr, size)
+
+    math.append(eqarr)
+    container.append(math)
     return container
 
 
