@@ -19,7 +19,9 @@ from docx.oxml import OxmlElement
 from docx.text.paragraph import Paragraph
 from docx.shared import Inches
 
-from omml import latex_to_omml
+from lxml import etree
+
+from omml import latex_to_omml, M, W
 
 
 def insert_after(paragraph: Paragraph, style_name: str | None = None) -> Paragraph:
@@ -55,6 +57,36 @@ def add_inline(paragraph: Paragraph, item: dict[str, object], size: int) -> None
     paragraph._p.append(latex_to_omml(str(latex), size=int(item.get("size", size))))
 
 
+def _math_tab_run() -> etree._Element:
+    """Return <m:r><w:tab/></m:r> so the tab lives inside the math object
+    (native Word numbered-formula layout, no stray arrow glyphs)."""
+    m_run = etree.Element(M("r"))
+    w_tab = etree.SubElement(m_run, W("tab"))
+    return m_run
+
+
+def _numbered_math(latex: str, number: str | None, size: int) -> etree._Element:
+    """Build a native <m:oMathPara> containing formula and (2-x) number.
+
+    Word's in-editor flow is: formula # (2-1) <Enter>.  The equivalent OOXML is
+    a single oMathPara with two oMath children (formula, number), each preceded
+    by an internal tab so the paragraph tab stops align the formula centre and
+    the number right.
+    """
+    container = etree.Element(M("oMathPara"))
+    formula = latex_to_omml(latex, size=size)
+    formula.insert(0, _math_tab_run())
+    container.append(formula)
+    if number:
+        number_math = etree.Element(M("oMath"))
+        number_math.append(_math_tab_run())
+        m_run = etree.SubElement(number_math, M("r"))
+        m_text = etree.SubElement(m_run, M("t"))
+        m_text.text = number
+        container.append(number_math)
+    return container
+
+
 def add_display_formula(
     paragraph: Paragraph,
     latex: str,
@@ -72,10 +104,7 @@ def add_display_formula(
     paragraph.paragraph_format.tab_stops.add_tab_stop(
         Inches(width_in), WD_TAB_ALIGNMENT.RIGHT
     )
-    paragraph.add_run("\t")
-    paragraph._p.append(latex_to_omml(latex, display=False, size=size))
-    if number:
-        paragraph.add_run("\t" + number)
+    paragraph._p.append(_numbered_math(latex, number, size))
 
 
 def add_block(document: Document, previous: Paragraph, block: dict[str, object]) -> Paragraph:

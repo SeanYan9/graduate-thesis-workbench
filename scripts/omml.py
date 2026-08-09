@@ -80,6 +80,7 @@ SYMBOLS = {
     "leftarrow": "←",
     "ldots": "…",
     "dots": "…",
+    "in": "∈",
 }
 
 OPERATORS = {"sum": "∑", "prod": "∏", "int": "∫", "lim": "lim", "max": "max", "min": "min"}
@@ -115,6 +116,12 @@ class Script:
     base: object
     subscript: object | None = None
     superscript: object | None = None
+
+
+@dataclass
+class Accent:
+    content: object
+    accent: str
 
 
 class LatexError(ValueError):
@@ -280,8 +287,14 @@ class Parser:
                     raise LatexError(f"unsupported environment {name!r}")
                 content = self.parse_environment(name)
                 return Group(content)
-        if command in {"quad", "qquad", ","}:
+        if command in {"quad", "qquad", ",", " "}:
             return Atom(" ", italic=False)
+        if command in {"{", "}"}:
+            return Atom(command, italic=False)
+        if command == "bar":
+            return Accent(self.argument(), "\u0304")
+        if command == "hat":
+            return Accent(self.argument(), "\u0302")
         raise LatexError(f"unsupported LaTeX command '\\{command}'")
 
     def parse_environment(self, name: str) -> list[object]:
@@ -362,6 +375,15 @@ def _render_contents(parent: etree._Element, node: object, size: int | None) -> 
         content = etree.SubElement(radical, M("e"))
         _render_contents(content, node.content, size)
         parent.append(radical)
+        return
+    if isinstance(node, Accent):
+        accent = etree.Element(M("acc"))
+        acc_pr = etree.SubElement(accent, M("accPr"))
+        chr_el = etree.SubElement(acc_pr, M("chr"))
+        chr_el.set(M("val"), node.accent)
+        content = etree.SubElement(accent, M("e"))
+        _render_contents(content, node.content, size)
+        parent.append(accent)
         return
     if isinstance(node, Script):
         if node.subscript is not None and node.superscript is not None:
