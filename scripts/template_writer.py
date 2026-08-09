@@ -134,6 +134,11 @@ def add_display_formula(
     document: Document,
 ) -> None:
     paragraph.alignment = WD_ALIGN_PARAGRAPH.LEFT
+    # 公式段落必须清除首行/左缩进：继承正文样式的 firstLine indent 会压缩
+    # 公式可用行宽，导致长公式（如决策向量、归一化式）显示不完整/截断。
+    # 只修改公式段落本身，不触碰正文段落，因此不影响正文格式。
+    paragraph.paragraph_format.first_line_indent = Inches(0)
+    paragraph.paragraph_format.left_indent = Inches(0)
     section = document.sections[0]
     width = section.page_width - section.left_margin - section.right_margin
     width_in = width.inches if hasattr(width, "inches") else float(width) / 914400
