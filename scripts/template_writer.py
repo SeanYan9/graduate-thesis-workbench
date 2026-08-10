@@ -214,3 +214,53 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
+
+def make_three_line_table(table) -> None:
+    """Convert a python-docx Table into the standard academic three-line table.
+
+    Standard (GB/T 7713.1 / journal editorial norms): only three horizontal rules
+    -- top rule (1.5 pt), header rule (0.75 pt under the header row), bottom rule
+    (1.5 pt); no vertical rules and no other horizontal rules inside the body.
+    Header row text is centred.
+    """
+    from docx.enum.text import WD_ALIGN_PARAGRAPH as _ALIGN
+    tbl = table._tbl
+    tblPr = tbl.tblPr
+    tblBorders = tblPr.find(W("tblBorders"))
+    if tblBorders is None:
+        tblBorders = etree.SubElement(tblPr, W("tblBorders"))
+    for edge in ("top", "bottom", "insideH", "insideV", "left", "right"):
+        el = tblBorders.find(W(edge))
+        if el is None:
+            el = etree.SubElement(tblBorders, W(edge))
+        el.set(W("val"), "none")
+    nrows = len(table.rows)
+    # header row: top 1.5pt + bottom 0.75pt
+    for cell in table.rows[0].cells:
+        _set_cell_edges(cell, top="12", bottom="6")
+    # last row: bottom 1.5pt
+    for cell in table.rows[nrows - 1].cells:
+        _set_cell_edges(cell, bottom="12")
+    # centre header text
+    for cell in table.rows[0].cells:
+        for p in cell.paragraphs:
+            p.alignment = _ALIGN.CENTER
+
+
+def _set_cell_edges(cell, top: str | None = None, bottom: str | None = None) -> None:
+    tc = cell._tc
+    tcPr = tc.get_or_add_tcPr()
+    tcBorders = tcPr.find(W("tcBorders"))
+    if tcBorders is None:
+        tcBorders = etree.SubElement(tcPr, W("tcBorders"))
+    for edge, sz in (("top", top), ("bottom", bottom)):
+        if sz is None:
+            continue
+        el = tcBorders.find(W(edge))
+        if el is None:
+            el = etree.SubElement(tcBorders, W(edge))
+        el.set(W("val"), "single")
+        el.set(W("sz"), sz)
+        el.set(W("space"), "0")
+        el.set(W("color"), "000000")
