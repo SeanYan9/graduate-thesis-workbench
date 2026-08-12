@@ -40,3 +40,22 @@ also read `docx-template-style-inheritance.md`.
 
 Text extraction is necessary for content checks but insufficient for layout
 verification. A document is not complete until the rendered pages are checked.
+
+## Section migration & formula renumbering (proven 2026-08-12)
+
+Moving a model/analysis section between chapters in python-docx:
+
+- Locate headings in the BODY region only (skip the TOC: TOC entries duplicate
+  heading text, e.g. 2.3 单点交叉口信号配时优化模型 appears both in the
+  TOC at ~#61 and in body at ~#140). Filter with i > 100 or heading styles.
+- The TOC is a TOC field (fldSimple). After moving sections, tell the user to
+  update the field in WPS/Word (right-click -> 更新域 / F9); do not hand-edit
+  page numbers.
+- Cross-reference text may be SPLIT across runs (e.g. 在 run, 2.3.5 run,
+  节统一说明 run). Replace per-run tokens (2.3.5 -> 3.1.5) rather
+  than full phrases, or normalise runs first.
+- Formula numbers live in <m:t> inside the eqArr #-numbering box
+  (bare 2-1, rendered as (2-1) by Word). Renumber with t.text = ....
+- Renumber heading levels largest-first (3.4->3.5, then 3.3->3.4, ...) BEFORE
+  renaming the moved section (2.3->3.1), otherwise the new 3.1 headings are
+  caught by the 3.1->3.2 pass and you get duplicate 3.2 headings.
