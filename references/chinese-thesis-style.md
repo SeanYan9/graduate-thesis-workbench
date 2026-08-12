@@ -3,14 +3,22 @@
 Use project-specific instructions first. When no conflicting university
 template rule exists, use these defaults for the current Chinese thesis:
 
-- Keep the prose academic but plain. Alternate short and long sentences.
-- Avoid mechanical connectors such as “首先”“其次”“最后” when paragraph
+- Keep the prose academic but plain. Alternate short and long sentences so
+  paragraph lengths visibly vary; uniform paragraph sizes read as AI-written.
+- Avoid mechanical connectors such as “首先”“其次”“最后”“综上” when paragraph
   structure already carries the relation.
-- Remove unnecessary quotation marks, em dashes, empty emphasis, and inflated
-  transitions. Use commas or a new sentence where appropriate.
-- Express results directly. Do not wrap results in unnecessary parentheses.
+- Remove unnecessary quotation marks and em dashes; use “、” where an em dash
+  or enumeration would otherwise appear. No filler words; keep academic tone.
+- Express results directly. Do not wrap results in unnecessary parentheses;
+  state “平均延误为 65.34 s” rather than “平均延误（65.34 s）”.
 - Prefer continuous paragraphs over bullet-like enumeration in manuscript body.
+  Fold layered “从理论层面看 / 从算法层面看 / …” or “文献梳理部分 / 模型构建
+  部分 / …” enumerations into one flowing paragraph instead of parallel leads.
 - Keep terminology stable across chapters, captions, tables, and references.
 - State uncertainty and limitations directly instead of using vague confidence.
 - Do not use anti-AI polishing to erase technical conditions, citations, units,
   or scope boundaries.
+- Thesis body must never reference process artifacts: do not write “小论文”,
+  “开题报告”, “Supporting Materials”, “支撑材料/补充材料”, “投稿材料”, or
+  “前期算法研究”. Content from those sources is either pasted in as formal
+  text or paraphrased; the manuscript cites only published literature [n].
